@@ -1,0 +1,70 @@
+# Dockerのホスト設定やaliasを記述 (zsh version)
+
+# Docker Host の設定
+export DOCKER_HOST=tcp://192.168.59.103:2375
+
+# タグを指定してイメージのビルド
+docker-build() {docker build -t=$1 .;}
+
+# コンテナが起動していないすべてのイメージを削除
+alias docker-rm-images='docker rmi $(docker images -q)'
+
+# 起動中のコンテナを全て止める
+alias docker-stop-containers='docker stop $(docker ps -a -q)'
+
+# 起動していないコンテナの全削除
+alias docker-rm-stopped-containers='docker rm $(docker ps -a -a)'
+
+# すべてのコンテナを止めてから削除する
+docker-rm-all-containers() {
+  echo "Dcokerコンテナを削除中..."
+  docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)
+  echo "すべてのコンテナを削除しました。"
+}
+
+# Docker + Peco
+
+# pecoで選択したコンテナに対して操作を行う
+docker_peco_containers() {
+
+  if [ $# -lt 1 ]; then
+    echo "Usage: dpc [OPTIONS] COMMAND [args]" >&2
+    return 1
+  fi
+
+  docker ps -a | peco | while read CONTAINER
+  do
+    docker $@ `echo $CONTAINER | awk '{print $1}'`
+  done
+
+}
+
+docker_peco_images() {
+
+  if [ $# -lt 1 ]; then
+    echo "Usage: dpi [OPTIONS] COMMAND [args]" >&2
+    return 1
+  fi
+
+  unset DOCKER_OPTS
+
+  [[ -z $ENVS ]] || \
+    for e in $ENVS; do DOCKER_OPTS="$DOCKER_OPTS -e $e"; done
+
+  [[ -z $VOLUMES ]] || \
+    for v in $VOLUMES; do DOCKER_OPTS="$DOCKER_OPTS -v $v"; done
+
+  [[ -z $PORTS ]] || \
+    for p in $PORTS; do DOCKER_OPTS="$DOCKER_OPTS -p $p"; done
+
+  docker images | peco | while read IMAGE
+  do
+    docker $DOCKER_OPTS $@ `echo $IMAGE | awk '{print $3}'`
+  done
+
+}
+
+alias dpc='docker_peco_containers'
+alias dpi='docker_peco_images'
+
+
