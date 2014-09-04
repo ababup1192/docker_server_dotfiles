@@ -1,7 +1,7 @@
 # Dockerのホスト設定やaliasを記述 (zsh version)
 
 # Docker Host の設定
-export DOCKER_HOST=tcp://192.168.59.103:2375
+export DOCKER_HOST=tcp://127.0.0.1:4243
 
 # タグを指定してイメージのビルド
 docker-build() {docker build -t=$1 .;}
